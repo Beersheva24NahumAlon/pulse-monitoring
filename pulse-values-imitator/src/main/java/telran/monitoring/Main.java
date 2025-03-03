@@ -4,37 +4,33 @@ import telran.monitoring.api.SensorData;
 import telran.monitoring.logging.Logger;
 import telran.monitoring.logging.LoggerStandard;
 import java.net.*;
+import java.util.HashMap;
 import java.util.Random;
-import java.util.stream.IntStream;
+import static telran.monitoring.Configuration.*;
 
 public class Main {
     static Logger logger = new LoggerStandard("imitator");
-    static final int MIN_PULSE_VALUE = 40;
-    static final int MAX_PULSE_VALUE = 240;
-    static final int TIMEOUT_SEND = 500;
-    static final int TIMEOUT_RESPONSE = 1000;
-    static final String DEFAULT_HOST = "localhost";
-    static final int DEFAULT_PORT = 5000;
-    static final int DEFAULT_N_PATIENTS = 10;
-    static final int DEFAULT_N_PACKETS = 50;
-    static final int MAX_PACKET_LENGTH = 1500;
     static DatagramSocket socket = null;
+    static HashMap<Long, Integer> lastPulseValues = new HashMap<>();
+    static Random random = new Random();
 
     public static void main(String[] args) throws Exception {
         socket = new DatagramSocket();
         socket.setSoTimeout(TIMEOUT_RESPONSE);
-        IntStream.rangeClosed(1, DEFAULT_N_PACKETS).forEach(Main::send);
+        for (int i = 1; i <= DEFAULT_N_PACKETS; i++) {
+            send();
+        }
     }
 
-    static void send(int i) {
-        SensorData sensorData = getRandomSensorData(i);
+    static void send() {
+        SensorData sensorData = getRandomSensorData();
         String jsonStr = sensorData.toString();
         try {
             udpSend(jsonStr);
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
-        
+
     }
 
     private static void udpSend(String jsonStr) throws Exception {
@@ -49,14 +45,30 @@ public class Main {
         }
     }
 
-    private static SensorData getRandomSensorData(int i) {
-        long patientId = getRandomNumber(1, DEFAULT_N_PATIENTS);
-        int value = (int) getRandomNumber(MIN_PULSE_VALUE, MAX_PULSE_VALUE);
+    private static SensorData getRandomSensorData() {
+        long patientId = random.nextInt(1, DEFAULT_N_PATIENTS + 1);
+        int value = getPulseValue(patientId);
         long timestamp = System.currentTimeMillis();
         return new SensorData(patientId, value, timestamp);
     }
 
-    private static long getRandomNumber(int minValue, int maxValue) {
-        return new Random().nextInt(minValue, maxValue + 1);
+    private static int getPulseValue(long patientId) {
+        Integer last = lastPulseValues.get(patientId);
+        last = last == null ? NORMAL_PULSE : last;
+        float chance = random.nextFloat(-1, 1);
+        int inc = random.nextInt(MIN_NORMAL_OFFSET, MAX_NORMAL_OFFSET + 1);
+        if (chance > 0) {
+            if (chance < PROP_INCREASE) {
+                inc = random.nextInt(MAX_PULSE_VALUE - last);
+            }
+        } else {
+            chance = -chance;
+            if (chance < PROP_DECREASE) {
+                inc = -random.nextInt(last - MIN_PULSE_VALUE);
+            }
+        }
+        lastPulseValues.put(patientId, last + inc);
+        return last + inc;
     }
+
 }
