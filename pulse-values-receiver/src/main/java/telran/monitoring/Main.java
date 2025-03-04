@@ -2,23 +2,26 @@ package telran.monitoring;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-
 import telran.monitoring.api.SensorData;
 import telran.monitoring.logging.Logger;
 import telran.monitoring.logging.LoggerStandard;
+import telran.monitoring.repository.Repository;
 import static telran.monitoring.Configuration.*;
 
 public class Main {
     static Logger logger = new LoggerStandard("receiver");
 
     public static void main(String[] args) throws Exception {
+
         DatagramSocket socket = new DatagramSocket(PORT);
         byte[] buffer = new byte[MAX_SIZE];
+        Repository repo = new SensorDataReposytory();
         while (true) {
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
             socket.receive(packet);
             String jsonStr = new String(packet.getData());
             logger.log("finest", jsonStr);
+            repo.put(SensorData.of(jsonStr), "pulse_values");
             logPulseValue(jsonStr);
             socket.send(packet);
         }

@@ -15,7 +15,7 @@ public record SensorData(long patientId, int value, long timestamp) {
     @Override
     public String toString() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("patienId", patientId);
+        jsonObject.put("patientId", patientId);
         jsonObject.put("value", value);
         jsonObject.put("timestamp", timestamp);
         return jsonObject.toString();

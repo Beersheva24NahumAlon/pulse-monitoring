@@ -16,7 +16,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         socket = new DatagramSocket();
-        socket.setSoTimeout(TIMEOUT_RESPONSE);
+        //socket.setSoTimeout(TIMEOUT_RESPONSE);
         for (int i = 1; i <= DEFAULT_N_PACKETS; i++) {
             send();
         }
@@ -32,8 +32,9 @@ public class Main {
         String jsonStr = sensorData.toString();
         try {
             udpSend(jsonStr);
+        } catch (SocketTimeoutException e) {
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log("error", e.getMessage());
         }
     }
 
