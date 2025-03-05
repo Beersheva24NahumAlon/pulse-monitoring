@@ -5,7 +5,8 @@ import java.net.DatagramSocket;
 import telran.monitoring.api.SensorData;
 import telran.monitoring.logging.Logger;
 import telran.monitoring.logging.LoggerStandard;
-import telran.monitoring.repository.MessageBox;
+import telran.monitoring.messagebox.MessageBox;
+
 import static telran.monitoring.Configuration.*;
 
 public class Main {

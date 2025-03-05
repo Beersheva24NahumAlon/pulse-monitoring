@@ -1,4 +1,4 @@
-package telran.monitoring.repository;
+package telran.monitoring.messagebox;
 
 import java.util.HashMap;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;

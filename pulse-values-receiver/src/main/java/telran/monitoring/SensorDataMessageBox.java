@@ -3,7 +3,7 @@ package telran.monitoring;
 import java.util.HashMap;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import telran.monitoring.api.SensorData;
-import telran.monitoring.repository.MessageBoxDynamoDB;
+import telran.monitoring.messagebox.MessageBoxDynamoDB;
 
 public class SensorDataMessageBox extends MessageBoxDynamoDB {
 
