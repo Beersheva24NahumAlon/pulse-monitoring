@@ -4,8 +4,8 @@ public interface Configuration {
 
     int MIN_PULSE_VALUE = 40;
     int MAX_PULSE_VALUE = 240;
-    //long TIMEOUT_SEND = 500;
-    int TIMEOUT_RESPONSE = 1000;
+    int TIMEOUT_RESPONSE = 2000;
+    int TIMEOUT_SEND = 500;
     String DEFAULT_HOST = "localhost";
     int DEFAULT_PORT = 5000;
     int DEFAULT_N_PATIENTS = 5;

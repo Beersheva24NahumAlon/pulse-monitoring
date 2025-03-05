@@ -3,9 +3,9 @@ package telran.monitoring;
 import java.util.HashMap;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import telran.monitoring.api.SensorData;
-import telran.monitoring.repository.RepositoryDynamoDB;
+import telran.monitoring.repository.MessageBoxDynamoDB;
 
-public class SensorDataReposytory extends RepositoryDynamoDB {
+public class SensorDataMessageBox extends MessageBoxDynamoDB {
 
     @Override
     public HashMap<String, AttributeValue> getMap(Object object) {

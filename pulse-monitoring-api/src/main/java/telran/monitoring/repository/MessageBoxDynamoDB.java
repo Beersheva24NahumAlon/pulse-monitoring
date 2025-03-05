@@ -5,10 +5,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
-abstract public class RepositoryDynamoDB implements Repository{
+abstract public class MessageBoxDynamoDB implements MessageBox{
     DynamoDbClient client;
 
-    public RepositoryDynamoDB() {
+    public MessageBoxDynamoDB() {
         client = DynamoDbClient.builder().build();
     }
 

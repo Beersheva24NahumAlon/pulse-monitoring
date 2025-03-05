@@ -16,9 +16,10 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         socket = new DatagramSocket();
-        //socket.setSoTimeout(TIMEOUT_RESPONSE);
+        socket.setSoTimeout(TIMEOUT_RESPONSE);
         for (int i = 1; i <= DEFAULT_N_PACKETS; i++) {
             send();
+            Thread.sleep(TIMEOUT_SEND);
         }
     }
 
