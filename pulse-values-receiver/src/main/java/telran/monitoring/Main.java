@@ -2,6 +2,8 @@ package telran.monitoring;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.Map;
+
 import telran.monitoring.api.SensorData;
 import telran.monitoring.logging.Logger;
 import telran.monitoring.logging.LoggerStandard;
@@ -10,24 +12,41 @@ import telran.monitoring.messagebox.MessageBox;
 import static telran.monitoring.Configuration.*;
 
 public class Main {
-    static Logger logger = new LoggerStandard("receiver");
+    private static final String PULSE_VALUES_MESSAGE_BOX = "pulse_values";
+    private static final String PULSE_VALUES_MESSAGE_BOX_CLASS = "telran.monitoring.SensorDataMessageBox";
 
-    public static void main(String[] args) throws Exception {
-        DatagramSocket socket = new DatagramSocket(PORT);
-        byte[] buffer = new byte[MAX_SIZE];
-        MessageBox repo = new SensorDataMessageBox();
-        while (true) {
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-            socket.receive(packet);
-            String jsonStr = new String(packet.getData());
-            logger.log("finest", jsonStr);
-            logPulseValue(jsonStr);
-            repo.put(SensorData.of(jsonStr), "pulse_values");
-            socket.send(packet);
+    static Logger logger = new LoggerStandard("receiver");
+    static Map<String, String> env = System.getenv();
+
+    public static void main(String[] args) {
+        try (DatagramSocket socket = new DatagramSocket(PORT)) {
+            byte[] buffer = new byte[MAX_SIZE];
+            @SuppressWarnings("unchecked")
+            MessageBox<SensorData> messageBox = MessageBoxFactory.getMessageBox(getMessageBoxClass(), getMessageBox());
+            while (true) {
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                String jsonStr = new String(packet.getData());
+                logPulseValue(jsonStr);
+                messageBox.put(SensorData.of(jsonStr));
+                socket.send(packet);
+            }
+        } catch (Exception e) {
+            logger.log("error", e.toString());
         }
+
+    }
+
+    private static String getMessageBoxClass() {
+        return env.getOrDefault("MESSAGE_BOX_CLASS", PULSE_VALUES_MESSAGE_BOX_CLASS);
+    }
+
+    private static String getMessageBox() {
+        return env.getOrDefault("MESSAGE_BOX_NAME", PULSE_VALUES_MESSAGE_BOX);
     }
 
     private static void logPulseValue(String jsonStr) {
+        logger.log("finest", jsonStr);
         SensorData sensorData = SensorData.of(jsonStr);
         int value = sensorData.value();
         if (value >= WARNING_LOG_VALUE && value <= ERROR_LOG_VALUE) {

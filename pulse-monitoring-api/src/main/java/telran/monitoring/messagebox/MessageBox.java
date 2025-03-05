@@ -1,5 +1,5 @@
 package telran.monitoring.messagebox;
 
-public interface MessageBox {
-    public void put(Object object, String messageBox);
+public interface MessageBox<T> {
+    public void put(T object);
 }

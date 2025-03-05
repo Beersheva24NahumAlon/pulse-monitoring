@@ -19,7 +19,6 @@ public class Main {
         socket.setSoTimeout(TIMEOUT_RESPONSE);
         for (int i = 1; i <= DEFAULT_N_PACKETS; i++) {
             send();
-            Thread.sleep(TIMEOUT_SEND);
         }
     }
 
@@ -33,6 +32,7 @@ public class Main {
         String jsonStr = sensorData.toString();
         try {
             udpSend(jsonStr);
+            Thread.sleep(TIMEOUT_SEND);
         } catch (SocketTimeoutException e) {
         } catch (Exception e) {
             logger.log("error", e.getMessage());
