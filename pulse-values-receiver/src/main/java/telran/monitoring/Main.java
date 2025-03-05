@@ -4,6 +4,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.Map;
 
+import org.apache.log4j.BasicConfigurator;
+
 import telran.monitoring.api.SensorData;
 import telran.monitoring.logging.Logger;
 import telran.monitoring.logging.LoggerStandard;
@@ -19,6 +21,7 @@ public class Main {
     static Map<String, String> env = System.getenv();
 
     public static void main(String[] args) {
+        BasicConfigurator.configure();
         try (DatagramSocket socket = new DatagramSocket(PORT)) {
             byte[] buffer = new byte[MAX_SIZE];
             @SuppressWarnings("unchecked")
