@@ -2,6 +2,8 @@ package telran.monitoring;
 
 import java.util.Map;
 
+import org.apache.log4j.BasicConfigurator;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
@@ -62,6 +64,7 @@ public class App {
 
   @SuppressWarnings("unchecked")
   private void saveJumpPulseData(JumpPulseData jumpPulseData) {
+    BasicConfigurator.configure();
     try {
       MessageBox<JumpPulseData> messageBox = MessageBoxFactory.getMessageBox(getMessageBoxClass(), getMessageBox());
       messageBox.put(jumpPulseData);
