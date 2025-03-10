@@ -35,6 +35,33 @@ Resources:
               Filters:
                 - Pattern: '{"eventName": ["INSERT"]}'
 
+  PulseValuesReducerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: pulse-values-reducer
+      Handler: telran.monitoring.App::handleRequest
+      Policies: 
+        - Statement:
+          - Effect: Allow
+            Resource: '*'
+            Action:
+            - dynamodb:*
+      Environment:
+        Variables:
+          LOGGER_LEVEL: finest
+          MESSAGE_BOX_NAME: !Ref ReduceValuesStream
+          COUNT_REDUCER: 3
+      Events:
+        DynamoDBItemInsert:
+          Type: DynamoDB
+          Properties:
+            StartingPosition: LATEST
+            BatchSize: 1
+            Stream: !GetAtt PulseValuesStream.StreamArn
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["INSERT"]}'
+
   PulseValuesStream:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -56,6 +83,25 @@ Resources:
         StreamViewType: NEW_IMAGE
 
   JumpValuesStream:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: patientId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: patientId
+          AttributeType: N
+        - AttributeName: timestamp
+          AttributeType: N
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE  
+
+  ReduceValuesStream:
     Type: AWS::DynamoDB::Table
     Properties:
       KeySchema:
