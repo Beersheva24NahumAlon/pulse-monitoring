@@ -6,6 +6,7 @@ import org.apache.log4j.BasicConfigurator;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 
 import telran.monitoring.api.JumpPulseData;
@@ -23,17 +24,23 @@ public class App {
   Logger logger = new LoggerStandard("jump-pulse-recognizer");
   LatestValueSaver lastValues = new LatestValuesSeverMap();
   Map<String, String> env = System.getenv();
+  float factor = getFactor();
 
   public void handleRequest(final DynamodbEvent event, final Context context) {
     event.getRecords().forEach(r -> {
-      Map<String, AttributeValue> map = r.getDynamodb().getNewImage();
-      long patientId = Long.parseLong(map.get("patientId").getN());
-      int value = Integer.parseInt(map.get("value").getN());
-      long timestamp = Long.parseLong(map.get("timestamp").getN());
-      SensorData sensorData = new SensorData(patientId, value, timestamp);
+      SensorData sensorData = getSensorData(r);
       logger.log("finest", sensorData.toString());
       computeSensorData(sensorData);
     });
+  }
+
+  private SensorData getSensorData(DynamodbStreamRecord r) {
+    Map<String, AttributeValue> map = r.getDynamodb().getNewImage();
+    long patientId = Long.parseLong(map.get("patientId").getN());
+    int value = Integer.parseInt(map.get("value").getN());
+    long timestamp = Long.parseLong(map.get("timestamp").getN());
+    SensorData sensorData = new SensorData(patientId, value, timestamp);
+    return sensorData;
   }
 
   private void computeSensorData(SensorData sensorData) {
@@ -53,7 +60,6 @@ public class App {
 
   private void recognizePulseJump(SensorData sensorData, int lastValue) {
     int currentValue = sensorData.value();
-    float factor = Float.parseFloat(getFactor());
     if (lastValue != 0 && Math.abs(lastValue - currentValue) / (float) lastValue >= factor) {
       logger.log("info", "Pulse jump has recognized form %d to %d".formatted(lastValue, currentValue));
       JumpPulseData jumpPulseData = new JumpPulseData(sensorData.patientId(), lastValue, currentValue,
@@ -73,8 +79,16 @@ public class App {
     }
   }
 
-  private String getFactor() {
-    return env.getOrDefault("FACTOR", DEFAULT_FACTOR);
+  private float getFactor() {
+    String factorStr = env.getOrDefault("FACTOR", DEFAULT_FACTOR);
+    float res = Float.parseFloat(DEFAULT_FACTOR);
+    try {
+      res = Float.parseFloat(factorStr);
+    } catch (Exception e) {
+      logger.log("warn", "Environment variable FACTOR is not float type, value has set to default (%s)"
+          .formatted(DEFAULT_FACTOR));
+    }
+    return res;
   }
 
   private String getMessageBoxClass() {

@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Timeout: 20
+    Runtime: java21
+    MemorySize: 512
+    Architectures:
+      - x86_64
+Resources:
+  JumpRecognizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: jump-pulse-recognizer
+      Handler: telran.monitoring.App::handleRequest
+      Policies: 
+        - Statement:
+          - Effect: Allow
+            Resource: '*'
+            Action:
+            - dynamodb:*
+      Environment:
+        Variables:
+          LOGGER_LEVEL: finest
+          MESSAGE_BOX_NAME: !Ref JumpValuesStream
+          FACTOR: 0.5f
+      Events:
+        DynamoDBItemInsert:
+          Type: DynamoDB
+          Properties:
+            StartingPosition: LATEST
+            BatchSize: 1
+            Stream: !GetAtt PulseValuesStream.StreamArn
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["INSERT"]}'
+
+  PulseValuesStream:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: pulse-values
+      KeySchema:
+        - AttributeName: patientId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: patientId
+          AttributeType: N
+        - AttributeName: timestamp
+          AttributeType: N
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+  JumpValuesStream:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: patientId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: patientId
+          AttributeType: N
+        - AttributeName: timestamp
+          AttributeType: N
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE  

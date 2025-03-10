@@ -14,7 +14,7 @@ import telran.monitoring.messagebox.MessageBox;
 import static telran.monitoring.Configuration.*;
 
 public class Main {
-    private static final String PULSE_VALUES_MESSAGE_BOX = "pulse_values";
+    private static final String PULSE_VALUES_MESSAGE_BOX = "pulse-values";
     private static final String PULSE_VALUES_MESSAGE_BOX_CLASS = "telran.monitoring.SensorDataMessageBox";
 
     static Logger logger = new LoggerStandard("receiver");

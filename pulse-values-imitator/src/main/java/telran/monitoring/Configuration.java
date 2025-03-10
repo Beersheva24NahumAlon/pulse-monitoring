@@ -9,7 +9,7 @@ public interface Configuration {
     String DEFAULT_HOST = "localhost";
     int DEFAULT_PORT = 5000;
     int DEFAULT_N_PATIENTS = 5;
-    int DEFAULT_N_PACKETS = 10;
+    int DEFAULT_N_PACKETS = 100;
     int JUMP_PROB = 10;
     int MIN_JUMP_PERCENT = 10;
     int MAX_JUMP_PERCENT = 100;
