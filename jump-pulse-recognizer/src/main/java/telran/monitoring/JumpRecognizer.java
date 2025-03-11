@@ -16,7 +16,7 @@ import telran.monitoring.logging.Logger;
 import telran.monitoring.logging.LoggerStandard;
 import telran.monitoring.messagebox.MessageBox;
 
-public class App {
+public class JumpRecognizer {
   private static final String DEFAULT_FACTOR = "0.7f";
   private static final String DEFAULT_MESSAGE_BOX_CLASS = "telran.monitoring.JumpPulseDataMessageBox";
   private static final String DEFAULT_MESSAGE_BOX = "jump_pulse_values";

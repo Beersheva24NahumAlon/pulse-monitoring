@@ -1,7 +1,9 @@
 package telran.monitoring;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import org.apache.log4j.BasicConfigurator;
 
@@ -17,7 +19,7 @@ import telran.monitoring.logging.Logger;
 import telran.monitoring.logging.LoggerStandard;
 import telran.monitoring.messagebox.MessageBox;
 
-public class App {
+public class PulseValuesReducer {
     private static final int DEFAULT_COUNT_REDUCER = 3;
     private static final String DEFAULT_MESSAGE_BOX_CLASS = "telran.monitoring.ReducePulseDataMessageBox";
     private static final String DEFAULT_MESSAGE_BOX = "avg_pulse_values";
@@ -30,7 +32,7 @@ public class App {
     public void handleRequest(final DynamodbEvent event, final Context context) {
         event.getRecords().forEach(r -> {
             SensorData sensorData = getSensorData(r);
-            logger.log("finest", sensorData.toString());
+            logger.log("finest", "data for computing: %s".formatted(sensorData.toString()));
             computeSensorData(sensorData, countReducer);
         });
     }
@@ -53,8 +55,10 @@ public class App {
         int value = sensorData.value();
         List<SensorData> list = lastValues.getAllValues(patientId);
         if (list.size() == countReducer) {
-            int avgValue = (int) Math.round(list.stream().mapToInt(e -> e.value()).average().getAsDouble());
-            logger.log("fine", "avg for patient %d is %d".formatted(patientId, avgValue));
+            int[] array = list.stream().mapToInt(e -> e.value()).toArray();
+            int avgValue = (int) Math.round(IntStream.of(array).average().getAsDouble());
+            logger.log("fine",
+                    "avg of values %s for patient %d is %d".formatted(Arrays.toString(array), patientId, avgValue));
             ReducePulseData reducePulseData = new ReducePulseData(patientId, avgValue, System.currentTimeMillis());
             saveReducePulseData(reducePulseData);
             lastValues.clearValues(patientId);

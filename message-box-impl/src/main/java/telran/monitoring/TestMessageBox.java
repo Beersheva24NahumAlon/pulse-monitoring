@@ -13,7 +13,7 @@ public class TestMessageBox<T> implements MessageBox<T> {
 
     @Override
     public void put(T object) {
-        logger.log("info", object.toString());
+        logger.log("info", "data for test saving: %s".formatted(object.toString()));
     }
 
 }

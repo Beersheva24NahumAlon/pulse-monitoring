@@ -12,7 +12,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: jump-pulse-recognizer
-      Handler: telran.monitoring.App::handleRequest
+      Handler: telran.monitoring.JumpRecognizer::handleRequest
       Policies: 
         - Statement:
           - Effect: Allow
@@ -23,6 +23,7 @@ Resources:
         Variables:
           LOGGER_LEVEL: finest
           MESSAGE_BOX_NAME: !Ref JumpValuesStream
+          MESSAGE_BOX_CLASS: telran.monitoring.JumpPulseDataMessageBox
           FACTOR: 0.5f
       Events:
         DynamoDBItemInsert:
@@ -39,7 +40,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: pulse-values-reducer
-      Handler: telran.monitoring.App::handleRequest
+      Handler: telran.monitoring.PulseValuesReducer::handleRequest
       Policies: 
         - Statement:
           - Effect: Allow
@@ -50,7 +51,8 @@ Resources:
         Variables:
           LOGGER_LEVEL: finest
           MESSAGE_BOX_NAME: !Ref ReduceValuesStream
-          COUNT_REDUCER: 3
+          MESSAGE_BOX_CLASS: telran.monitoring.ReducePulseDataMessageBox
+          COUNT_REDUCER: 5
       Events:
         DynamoDBItemInsert:
           Type: DynamoDB

@@ -16,7 +16,7 @@ public record ReducePulseData(long patientId, int avgValue, long timestamp) {
     public String toString() {
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("patientId", patientId);
-        jsonObj.put("oldValue", avgValue);
+        jsonObj.put("avgValue", avgValue);
         jsonObj.put("timestamp", timestamp);
         return jsonObj.toString();
     }
