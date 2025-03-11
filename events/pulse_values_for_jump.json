@@ -59,10 +59,10 @@
         "dynamodb": {
           "NewImage": {
             "value": {
-              "N": "200"
+              "N": "90"
             },
             "patientId": {
-              "N": "101"
+              "N": "102"
             },
             "timestamp": {
               "N": "2"
