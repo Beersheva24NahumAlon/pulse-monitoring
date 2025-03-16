@@ -29,13 +29,13 @@ public class AbnormalValuesRecognizer {
         event.getRecords().forEach(r -> {
             SensorData sensorData = getSensorData(r);
             long patientId = sensorData.patientId();
-            PulseRange range = rangeProviderClient.getRange(patientId);
-            if (range != null) {
+            PulseRange range;
+            try {
+                range = rangeProviderClient.getRange(patientId);
                 logger.log("finest", "data for computing: %s".formatted(sensorData.toString()));
                 computeSensorData(sensorData, range);
-            } else {
-                logger.log("error", "pulse range for patient number %d has not found in database"
-                        .formatted(patientId));
+            } catch (Exception e) {
+                logger.log("error", "error - " + e.toString());
             }
         });
     }
@@ -93,7 +93,8 @@ public class AbnormalValuesRecognizer {
     private RangeProviderClient getRangeProviderClient(String className) {
         RangeProviderClient res = new RangeProviderClientMapImpl();
         try {
-            res = RangeProviderFactory.getRangeProviderClient(className);
+            res = (RangeProviderClient) Class.forName(className).getConstructor().newInstance();
+            //res = RangeProviderFactory.getRangeProviderClient(className);
             logger.log("config", "created object of class %s".formatted(className));
         } catch (Exception e) {
             logger.log("warning", "class %s has not found, created object of class by default (%s)"

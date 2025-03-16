@@ -69,6 +69,7 @@ Resources:
     Properties:
       CodeUri: abnormal-values-recognizer
       Handler: telran.monitoring.AbnormalValuesRecognizer::handleRequest
+      FunctionName: abnormal-values-recognizer
       Policies: 
         - Statement:
           - Effect: Allow
@@ -80,7 +81,8 @@ Resources:
           LOGGER_LEVEL: finest
           MESSAGE_BOX_NAME: !Ref AbnormalValuesStream
           MESSAGE_BOX_CLASS: telran.monitoring.AbnormalPulseDataMessageBox
-          RANGE_PROVIDER_CLASS: telran.monitoring.RangeProviderClientMapImpl
+          RANGE_PROVIDER_CLASS: telran.monitoring.RangeProviderClientHttpImpl
+          RANGE_PROVIDER_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
       Events:
         DynamoDBItemInsert:
           Type: DynamoDB
@@ -91,6 +93,47 @@ Resources:
             FilterCriteria:
               Filters:
                 - Pattern: '{"eventName": ["INSERT"]}'
+
+  AvgValuesPopulatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: avg-values-populator
+      Handler: telran.monitoring.AvgValuesPopulator::handleRequest
+      Policies: 
+        - Statement:
+          - Effect: Allow
+            Resource: '*'
+            Action:
+            - dynamodb:*
+      Environment:
+        Variables:
+          LOGGER_LEVEL: finest
+          MONGODB_PASSWORD: Q1w2e3r4$
+      Events:
+        DynamoDBItemInsert:
+          Type: DynamoDB
+          Properties:
+            StartingPosition: LATEST
+            BatchSize: 1
+            Stream: !GetAtt ReduceValuesStream.StreamArn
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["INSERT"]}'
+
+  RangeDataProviderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: range-data-provider
+      Handler: telran.monitoring.AbnormalValuesRecognizer::handleRequest
+      Environment: 
+        Variables:
+          DB_PASSWORD: Q1w2e3r4$
+      Events:
+        RangeDataProvider:
+          Type: Api 
+          Properties:
+            Path: /
+            Method: get
 
   PulseValuesStream:
     Type: AWS::DynamoDB::Table
@@ -168,3 +211,11 @@ Resources:
         WriteCapacityUnits: 5
       StreamSpecification:
         StreamViewType: NEW_IMAGE  
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  RangeDataProviderApi:
+    Description: "API Gateway endpoint URL for Prod stage for Range Data Provider Function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"

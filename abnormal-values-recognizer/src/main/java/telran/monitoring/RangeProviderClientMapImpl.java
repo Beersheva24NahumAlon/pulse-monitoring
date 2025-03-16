@@ -1,6 +1,7 @@
 package telran.monitoring;
 
 import java.util.HashMap;
+import java.util.NoSuchElementException;
 
 import telran.monitoring.api.PulseRange;
 
@@ -11,7 +12,11 @@ public class RangeProviderClientMapImpl implements RangeProviderClient {
 
     @Override
     public PulseRange getRange(long patientId) {
-        return map.get(patientId);
+        PulseRange res = map.get(patientId);
+        if (res == null) {
+            throw new NoSuchElementException("patient with id %d has not found in database".formatted(patientId));
+        }
+        return res;
     }
 
 }
