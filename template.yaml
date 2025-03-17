@@ -82,7 +82,7 @@ Resources:
           MESSAGE_BOX_NAME: !Ref AbnormalValuesStream
           MESSAGE_BOX_CLASS: telran.monitoring.AbnormalPulseDataMessageBox
           RANGE_PROVIDER_CLASS: telran.monitoring.RangeProviderClientHttpImpl
-          RANGE_PROVIDER_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+          RANGE_PROVIDER_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/range/"
       Events:
         DynamoDBItemInsert:
           Type: DynamoDB
@@ -125,15 +125,32 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: range-data-provider
-      Handler: telran.monitoring.AbnormalValuesRecognizer::handleRequest
+      Handler: telran.monitoring.RangeDataProvider::handleRequest
       Environment: 
         Variables:
           DB_PASSWORD: Q1w2e3r4$
+          DATA_SOURCE_CLASS: telran.monitoring.DataSourcePostgre
       Events:
         RangeDataProvider:
           Type: Api 
           Properties:
-            Path: /
+            Path: /range/
+            Method: get
+
+  EmailDataProviderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: email-data-provider
+      Handler: telran.monitoring.EmailDataProvider::handleRequest
+      Environment: 
+        Variables:
+          DB_PASSWORD: Q1w2e3r4$
+          DATA_SOURCE_CLASS: telran.monitoring.DataSourcePostgre
+      Events:
+        RangeDataProvider:
+          Type: Api 
+          Properties:
+            Path: /email/
             Method: get
 
   PulseValuesStream:
@@ -219,4 +236,7 @@ Outputs:
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   RangeDataProviderApi:
     Description: "API Gateway endpoint URL for Prod stage for Range Data Provider Function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/range/"
+  EmailDataProviderApi:
+    Description: "API Gateway endpoint URL for Prod stage for Range Data Provider Function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/"

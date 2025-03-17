@@ -11,9 +11,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 
-import telran.monitoring.api.PulseRange;
-
-public class RangeDataProvider implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class EmailDataProvider implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     private static final String DEFAULT_DATA_SOURCE_CLASS = "telran.monitoring.DataSourceMap";
 
     Logger logger = new LoggerStandard("email-data-provider");
@@ -39,8 +37,8 @@ public class RangeDataProvider implements RequestHandler<APIGatewayProxyRequestE
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("patient id must be a number");
             }
-            PulseRange range = dataSource.getRange(patientId);
-            String responseBody = "{ \"min\": %d, \"max\": %d }".formatted(range.min(), range.max());
+            String email = dataSource.getEmail(patientId);
+            String responseBody = "{ \"email\": %s }".formatted(email);
             return response
                     .withStatusCode(200)
                     .withBody(responseBody);
@@ -62,11 +60,11 @@ public class RangeDataProvider implements RequestHandler<APIGatewayProxyRequestE
     private DataSource getDataSourceObject() {
         String className = env.getOrDefault("DATA_SOURCE_CLASS", DEFAULT_DATA_SOURCE_CLASS);
         try {
-            return (DataSource) Class.forName(className).getConstructor(Logger.class, Map.class).newInstance(logger,
-                    env);
+            return (DataSource) Class.forName(className).getConstructor(Logger.class, Map.class).newInstance(logger, env);
         } catch (Exception e) {
             logger.log("error", e.toString());
             throw new RuntimeException(e);
         }
     }
+
 }
