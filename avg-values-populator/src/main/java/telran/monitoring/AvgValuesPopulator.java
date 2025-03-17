@@ -10,26 +10,18 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
 
 import telran.monitoring.api.ReducePulseData;
 import telran.monitoring.logging.Logger;
 import telran.monitoring.logging.LoggerStandard;
 
 public class AvgValuesPopulator {
-    private static final String DEFAULT_MONGODB_USERNAME = "root";
-    private static final String DEFAULT_MONGODB_CLUSTER = "Cluster0";
+
+    private static final String DEFAULT_DATA_SOURCE_CLASS = "telran.monitoring.DataSourceTest";
 
     Logger logger = new LoggerStandard("avg-values-populator");
     Map<String, String> env = System.getenv();
-    MongoClient mongoClient = MongoClients
-            .create("mongodb+srv://%s:%s@%s.dvztv.mongodb.net/?retryWrites=true&w=majority&appName=%s"
-                    .formatted(getMongoUser(), getMongoPassword(), getMongoCluster(), getMongoCluster()));
-    MongoCollection<Document> collection = mongoClient
-            .getDatabase("pulse_monitoring")
-            .getCollection("avg_pulse_values");
+    DataSource dataSource = getDataSourceClass();
 
     public void handleRequest(final DynamodbEvent event, final Context context) {
         event.getRecords().forEach(r -> {
@@ -39,22 +31,14 @@ public class AvgValuesPopulator {
         });
     }
 
-    private Object getMongoCluster() {
-        String res = env.getOrDefault("MONGODB_CLUSTER", DEFAULT_MONGODB_CLUSTER);
-        return res;
-    }
-
-    private Object getMongoPassword() {
-        String res = env.get("MONGODB_PASSWORD");
-        if (res == null) {
-            throw new RuntimeException("password must be specified in env variable");
+    private DataSource getDataSourceClass() {
+        String className = env.getOrDefault("DATA_SOURCE_CLASS", DEFAULT_DATA_SOURCE_CLASS);
+        try {
+            return (DataSource) Class.forName(className).getConstructor(Logger.class, Map.class).newInstance(logger, env);
+        } catch (Exception e) {
+            logger.log("error", e.toString());
+            throw new RuntimeException(e);
         }
-        return res;
-    }
-
-    private Object getMongoUser() {
-        String res = env.getOrDefault("MONGODB_USERNAME", DEFAULT_MONGODB_USERNAME);
-        return res;
     }
 
     private void saveAvgPulseValueToDB(ReducePulseData avgPulseData) {
@@ -64,8 +48,8 @@ public class AvgValuesPopulator {
                 .append("avgValue", avgPulseData.avgValue())
                 .append("timestamp", Instant.ofEpochSecond(avgPulseData.timestamp()).toString());
         try {
-            collection.insertOne(doc);
             logger.log("fine", "saving to db: %s".formatted(doc.toString()));
+            dataSource.put(doc);
         } catch (Exception e) {
             logger.log("error", e.toString());
         }
