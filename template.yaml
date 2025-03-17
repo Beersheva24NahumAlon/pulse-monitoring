@@ -109,6 +109,7 @@ Resources:
         Variables:
           LOGGER_LEVEL: finest
           MONGODB_PASSWORD: Q1w2e3r4$
+          DATA_SOURCE_CLASS: telran.monitoring.DataSourceMongo
       Events:
         DynamoDBItemInsert:
           Type: DynamoDB

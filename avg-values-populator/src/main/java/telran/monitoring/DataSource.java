@@ -1,7 +1,7 @@
 package telran.monitoring;
-import org.bson.Document;
+
+import telran.monitoring.api.ReducePulseData;
 
 public interface DataSource {
-
-    void put(Document doc);
+    void put(ReducePulseData avgPulseData);
 }

@@ -1,10 +1,6 @@
 package telran.monitoring;
 
-import java.time.Instant;
 import java.util.Map;
-
-import org.bson.Document;
-import org.bson.types.ObjectId;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
@@ -42,14 +38,9 @@ public class AvgValuesPopulator {
     }
 
     private void saveAvgPulseValueToDB(ReducePulseData avgPulseData) {
-        Document doc = new Document()
-                .append("_id", new ObjectId())
-                .append("patientId", avgPulseData.patientId())
-                .append("avgValue", avgPulseData.avgValue())
-                .append("timestamp", Instant.ofEpochSecond(avgPulseData.timestamp()).toString());
         try {
-            logger.log("fine", "saving to db: %s".formatted(doc.toString()));
-            dataSource.put(doc);
+            logger.log("fine", "saving to db: %s".formatted(avgPulseData.toString()));
+            dataSource.put(avgPulseData);
         } catch (Exception e) {
             logger.log("error", e.toString());
         }
