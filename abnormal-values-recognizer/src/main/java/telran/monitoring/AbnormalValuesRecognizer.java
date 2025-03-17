@@ -94,7 +94,6 @@ public class AbnormalValuesRecognizer {
         RangeProviderClient res = new RangeProviderClientMapImpl();
         try {
             res = (RangeProviderClient) Class.forName(className).getConstructor().newInstance();
-            //res = RangeProviderFactory.getRangeProviderClient(className);
             logger.log("config", "created object of class %s".formatted(className));
         } catch (Exception e) {
             logger.log("warning", "class %s has not found, created object of class by default (%s)"

@@ -41,18 +41,22 @@ public class RangeDataProvider implements RequestHandler<APIGatewayProxyRequestE
             }
             PulseRange range = dataSource.getRange(patientId);
             String responseBody = "{ \"min\": %d, \"max\": %d }".formatted(range.min(), range.max());
+            logger.log("fine", "response code: 200, response body: %s".formatted(responseBody));
             return response
                     .withStatusCode(200)
                     .withBody(responseBody);
         } catch (NoSuchElementException e) {
+            logger.log("error", "response code: 404, response body: %s".formatted(e.toString()));
             return response
                     .withBody(e.toString())
                     .withStatusCode(404);
         } catch (IllegalArgumentException e) {
+            logger.log("error", "response code: 400, response body: %s".formatted(e.toString()));
             return response
                     .withBody(e.toString())
                     .withStatusCode(400);
         } catch (Exception e) {
+            logger.log("error", "response code: 500, response body: %s".formatted(e.toString()));
             return response
                     .withBody(e.toString())
                     .withStatusCode(500);
@@ -61,9 +65,10 @@ public class RangeDataProvider implements RequestHandler<APIGatewayProxyRequestE
 
     private DataSource getDataSourceObject() {
         String className = env.getOrDefault("DATA_SOURCE_CLASS", DEFAULT_DATA_SOURCE_CLASS);
+        logger.log("config", "Data source class: %s".formatted(className));
         try {
-            return (DataSource) Class.forName(className).getConstructor(Logger.class, Map.class).newInstance(logger,
-                    env);
+            return (DataSource) Class.forName(className)
+            .getConstructor(Logger.class, Map.class).newInstance(logger, env);
         } catch (Exception e) {
             logger.log("error", e.toString());
             throw new RuntimeException(e);

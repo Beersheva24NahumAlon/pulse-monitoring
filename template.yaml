@@ -94,6 +94,36 @@ Resources:
               Filters:
                 - Pattern: '{"eventName": ["INSERT"]}'
 
+  AbnormalValuesNotifyerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: abnormal-values-notifyer
+      Handler: telran.monitoring.AbnormalValuesNotifyer::handleRequest
+      FunctionName: abnormal-values-notifyer
+      Policies: 
+        - Statement:
+          - Effect: Allow
+            Resource: '*'
+            Action:
+            - dynamodb:*
+      Environment:
+        Variables:
+          LOGGER_LEVEL: finest
+          MESSAGE_BOX_NAME: !Ref NotificationsStream
+          MESSAGE_BOX_CLASS: telran.monitoring.NotificationDataMessageBox
+          EMAIL_PROVIDER_CLASS: telran.monitoring.EmailProviderClientHttpImpl
+          EMAIL_PROVIDER_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/"
+      Events:
+        DynamoDBItemInsert:
+          Type: DynamoDB
+          Properties:
+            StartingPosition: LATEST
+            BatchSize: 1
+            Stream: !GetAtt AbnormalValuesStream.StreamArn
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["INSERT"]}'
+
   AvgValuesPopulatorFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -212,6 +242,25 @@ Resources:
         StreamViewType: NEW_IMAGE  
 
   AbnormalValuesStream:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: patientId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: patientId
+          AttributeType: N
+        - AttributeName: timestamp
+          AttributeType: N
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+  NotificationsStream:
     Type: AWS::DynamoDB::Table
     Properties:
       KeySchema:
