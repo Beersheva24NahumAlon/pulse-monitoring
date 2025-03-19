@@ -9,6 +9,14 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 
+import software.amazon.awssdk.services.ses.SesClient;
+import software.amazon.awssdk.services.ses.model.Body;
+import software.amazon.awssdk.services.ses.model.Content;
+import software.amazon.awssdk.services.ses.model.Destination;
+import software.amazon.awssdk.services.ses.model.Message;
+import software.amazon.awssdk.services.ses.model.SendEmailRequest;
+import software.amazon.awssdk.services.ses.model.SesException;
+
 import telran.monitoring.api.AbnormalPulseData;
 import telran.monitoring.api.NotificationData;
 import telran.monitoring.api.PulseRange;
@@ -20,10 +28,12 @@ public class AbnormalValuesNotifyer {
     private static final String DEFAULT_MESSAGE_BOX_CLASS = "telran.monitoring.NotificationDataMessageBox";
     private static final String DEFAULT_MESSAGE_BOX = "notifications";
     private static final String DEFAULT_EMAIL_PROVIDER_CLASS = "telran.monitoring.EmailProviderClientMapImpl";
+    private static final String FROM_EMAIL = "nahumalon2301@gmail.com";
 
     Logger logger = new LoggerStandard("abnormal-values-notifyer");
     Map<String, String> env = System.getenv();
     EmailProviderClient rangeProviderClient = getEmailProviderClient(getEmailProviderClientClass());
+    SesClient client = SesClient.builder().build();
 
     public void handleRequest(final DynamodbEvent event, final Context context) {
         event.getRecords().forEach(r -> {
@@ -41,35 +51,35 @@ public class AbnormalValuesNotifyer {
     }
 
     private void computeAbnormalPulseData(AbnormalPulseData abnormalPulseData, String email) {
-        // send email
-
-        // save to dynamodb
         long patientId = abnormalPulseData.patientId();
         int value = abnormalPulseData.value();
         long timestamp = abnormalPulseData.timestamp();
         String text = "Please pay attantion: patient id %d has abnormal pulse value: %d".formatted(patientId, value);
+        // send email
+        sendEmail(email, text);
+        // save to dynamodb
         NotificationData notificationData = new NotificationData(patientId, email, text, timestamp);
         logger.log("fine", "notification data to save: %s".formatted(notificationData.toString()));
         saveNotificationData(notificationData);
+    }
 
-        // long patientId = sensorData.patientId();
-        // int value = sensorData.value();
-        // int max = range.max();
-        // int min = range.min();
-        // if (value < min || value > max) {
-        // logger.log("fine", "abnormal pulse value (%d) recognized for patient number
-        // %d (range: [%d - %d])"
-        // .formatted(value, patientId, min, max));
-        // AbnormalPulseData abnormalPulseData = new AbnormalPulseData(patientId, value,
-        // range, sensorData.timestamp());
-        // logger.log("fine", "abnormal pulse data to save:
-        // %s".formatted(abnormalPulseData.toString()));
-        // saveNotificationData(abnormalPulseData);
-        // } else {
-        // logger.log("finest", "value of pulse (%d) is in range [%d - %d] for patient
-        // number %d"
-        // .formatted(value, min, max, patientId));
-        // }
+    private void sendEmail(String email, String text) {
+        Destination destination = Destination.builder().toAddresses(email).build();
+        Content content = Content.builder().data(text).build();
+        Content subject = Content.builder().data(text).build();
+        Body body = Body.builder().html(content).build();
+        Message message = Message.builder().subject(subject).body(body).build();
+        SendEmailRequest emailRequest = SendEmailRequest.builder()
+                .destination(destination)
+                .message(message)
+                .source(FROM_EMAIL)
+                .build();
+        try {
+            logger.log("fine", "Attempting to send an email to %s".formatted(email));
+            client.sendEmail(emailRequest);
+        } catch (SesException e) {
+            logger.log("error", e.toString());
+        }
     }
 
     @SuppressWarnings("unchecked")

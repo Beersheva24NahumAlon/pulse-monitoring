@@ -106,6 +106,7 @@ Resources:
             Resource: '*'
             Action:
             - dynamodb:*
+              ses:SendEmail
       Environment:
         Variables:
           LOGGER_LEVEL: finest
