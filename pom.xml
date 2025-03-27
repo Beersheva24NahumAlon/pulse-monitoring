@@ -39,6 +39,7 @@
         <module>avg-values-populator</module>
         <module>last-values-saver-impl</module>
         <module>sender-mails</module>
+        <module>data-provider-client</module>
     </modules>
 
 </project>
