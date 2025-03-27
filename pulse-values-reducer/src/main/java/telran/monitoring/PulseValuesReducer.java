@@ -25,7 +25,7 @@ public class PulseValuesReducer {
     private static final String DEFAULT_MESSAGE_BOX = "avg_pulse_values";
 
     Logger logger = new LoggerStandard("pulse-values-reducer");
-    LatestValueSaver lastValues = new LatestValuesSeverMap();
+    LatestValueSaver lastValues = new LatestValuesSeverMap(logger);
     Map<String, String> env = System.getenv();
     int countReducer = getCountReducer();
 

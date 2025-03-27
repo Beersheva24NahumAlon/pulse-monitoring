@@ -8,23 +8,29 @@ Globals:
     Architectures:
       - x86_64
 Resources:
+
   JumpRecognizerFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: jump-pulse-recognizer
       Handler: telran.monitoring.JumpRecognizer::handleRequest
-      Policies: 
+      Policies:
         - Statement:
           - Effect: Allow
             Resource: '*'
             Action:
             - dynamodb:*
+        - S3ReadPolicy:
+            BucketName: !Ref JumpS3Bucket
+        - S3WritePolicy:
+            BucketName: !Ref JumpS3Bucket
       Environment:
         Variables:
           LOGGER_LEVEL: finest
           MESSAGE_BOX_NAME: !Ref JumpValuesStream
           MESSAGE_BOX_CLASS: telran.monitoring.JumpPulseDataMessageBox
           FACTOR: 0.5f
+          BUCKET_NAME: !Ref JumpS3Bucket
       Events:
         DynamoDBItemInsert:
           Type: DynamoDB
@@ -36,153 +42,153 @@ Resources:
               Filters:
                 - Pattern: '{"eventName": ["INSERT"]}'
 
-  PulseValuesReducerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: pulse-values-reducer
-      Handler: telran.monitoring.PulseValuesReducer::handleRequest
-      Policies: 
-        - Statement:
-          - Effect: Allow
-            Resource: '*'
-            Action:
-            - dynamodb:*
-      Environment:
-        Variables:
-          LOGGER_LEVEL: finest
-          MESSAGE_BOX_NAME: !Ref ReduceValuesStream
-          MESSAGE_BOX_CLASS: telran.monitoring.ReducePulseDataMessageBox
-          COUNT_REDUCER: 5
-      Events:
-        DynamoDBItemInsert:
-          Type: DynamoDB
-          Properties:
-            StartingPosition: LATEST
-            BatchSize: 1
-            Stream: !GetAtt PulseValuesStream.StreamArn
-            FilterCriteria:
-              Filters:
-                - Pattern: '{"eventName": ["INSERT"]}'
+  # PulseValuesReducerFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: pulse-values-reducer
+  #     Handler: telran.monitoring.PulseValuesReducer::handleRequest
+  #     Policies: 
+  #       - Statement:
+  #         - Effect: Allow
+  #           Resource: '*'
+  #           Action:
+  #           - dynamodb:*
+  #     Environment:
+  #       Variables:
+  #         LOGGER_LEVEL: finest
+  #         MESSAGE_BOX_NAME: !Ref ReduceValuesStream
+  #         MESSAGE_BOX_CLASS: telran.monitoring.ReducePulseDataMessageBox
+  #         COUNT_REDUCER: 5
+  #     Events:
+  #       DynamoDBItemInsert:
+  #         Type: DynamoDB
+  #         Properties:
+  #           StartingPosition: LATEST
+  #           BatchSize: 1
+  #           Stream: !GetAtt PulseValuesStream.StreamArn
+  #           FilterCriteria:
+  #             Filters:
+  #               - Pattern: '{"eventName": ["INSERT"]}'
 
-  AbnormalValuesRecognizerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: abnormal-values-recognizer
-      Handler: telran.monitoring.AbnormalValuesRecognizer::handleRequest
-      FunctionName: abnormal-values-recognizer
-      Policies: 
-        - Statement:
-          - Effect: Allow
-            Resource: '*'
-            Action:
-            - dynamodb:*
-      Environment:
-        Variables:
-          LOGGER_LEVEL: finest
-          MESSAGE_BOX_NAME: !Ref AbnormalValuesStream
-          MESSAGE_BOX_CLASS: telran.monitoring.AbnormalPulseDataMessageBox
-          RANGE_PROVIDER_CLASS: telran.monitoring.RangeProviderClientHttpImpl
-          RANGE_PROVIDER_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/range/"
-      Events:
-        DynamoDBItemInsert:
-          Type: DynamoDB
-          Properties:
-            StartingPosition: LATEST
-            BatchSize: 1
-            Stream: !GetAtt PulseValuesStream.StreamArn
-            FilterCriteria:
-              Filters:
-                - Pattern: '{"eventName": ["INSERT"]}'
+  # AbnormalValuesRecognizerFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: abnormal-values-recognizer
+  #     Handler: telran.monitoring.AbnormalValuesRecognizer::handleRequest
+  #     FunctionName: abnormal-values-recognizer
+  #     Policies: 
+  #       - Statement:
+  #         - Effect: Allow
+  #           Resource: '*'
+  #           Action:
+  #           - dynamodb:*
+  #     Environment:
+  #       Variables:
+  #         LOGGER_LEVEL: finest
+  #         MESSAGE_BOX_NAME: !Ref AbnormalValuesStream
+  #         MESSAGE_BOX_CLASS: telran.monitoring.AbnormalPulseDataMessageBox
+  #         RANGE_PROVIDER_CLASS: telran.monitoring.RangeProviderClientHttpImpl
+  #         RANGE_PROVIDER_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/range/"
+  #     Events:
+  #       DynamoDBItemInsert:
+  #         Type: DynamoDB
+  #         Properties:
+  #           StartingPosition: LATEST
+  #           BatchSize: 1
+  #           Stream: !GetAtt PulseValuesStream.StreamArn
+  #           FilterCriteria:
+  #             Filters:
+  #               - Pattern: '{"eventName": ["INSERT"]}'
 
-  AbnormalValuesNotifyerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: abnormal-values-notifyer
-      Handler: telran.monitoring.AbnormalValuesNotifyer::handleRequest
-      FunctionName: abnormal-values-notifyer
-      Policies: 
-        - Statement:
-          - Effect: Allow
-            Resource: '*'
-            Action:
-            - dynamodb:*
-              ses:SendEmail
-      Environment:
-        Variables:
-          LOGGER_LEVEL: finest
-          MESSAGE_BOX_NAME: !Ref NotificationsStream
-          MESSAGE_BOX_CLASS: telran.monitoring.NotificationDataMessageBox
-          EMAIL_PROVIDER_CLASS: telran.monitoring.EmailProviderClientHttpImpl
-          EMAIL_PROVIDER_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/"
-      Events:
-        DynamoDBItemInsert:
-          Type: DynamoDB
-          Properties:
-            StartingPosition: LATEST
-            BatchSize: 1
-            Stream: !GetAtt AbnormalValuesStream.StreamArn
-            FilterCriteria:
-              Filters:
-                - Pattern: '{"eventName": ["INSERT"]}'
+  # AbnormalValuesNotifyerFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: abnormal-values-notifyer
+  #     Handler: telran.monitoring.AbnormalValuesNotifyer::handleRequest
+  #     FunctionName: abnormal-values-notifyer
+  #     Policies: 
+  #       - Statement:
+  #         - Effect: Allow
+  #           Resource: '*'
+  #           Action:
+  #             - dynamodb:*
+  #             - ses:SendEmail
+  #     Environment:
+  #       Variables:
+  #         LOGGER_LEVEL: finest
+  #         MESSAGE_BOX_NAME: !Ref NotificationsStream
+  #         MESSAGE_BOX_CLASS: telran.monitoring.NotificationDataMessageBox
+  #         EMAIL_PROVIDER_CLASS: telran.monitoring.EmailProviderClientHttpImpl
+  #         EMAIL_PROVIDER_URL: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/"
+  #     Events:
+  #       DynamoDBItemInsert:
+  #         Type: DynamoDB
+  #         Properties:
+  #           StartingPosition: LATEST
+  #           BatchSize: 1
+  #           Stream: !GetAtt AbnormalValuesStream.StreamArn
+  #           FilterCriteria:
+  #             Filters:
+  #               - Pattern: '{"eventName": ["INSERT"]}'
 
-  AvgValuesPopulatorFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: avg-values-populator
-      Handler: telran.monitoring.AvgValuesPopulator::handleRequest
-      Policies: 
-        - Statement:
-          - Effect: Allow
-            Resource: '*'
-            Action:
-            - dynamodb:*
-      Environment:
-        Variables:
-          LOGGER_LEVEL: finest
-          MONGODB_PASSWORD: Q1w2e3r4$
-          DATA_SOURCE_CLASS: telran.monitoring.DataSourceMongo
-      Events:
-        DynamoDBItemInsert:
-          Type: DynamoDB
-          Properties:
-            StartingPosition: LATEST
-            BatchSize: 1
-            Stream: !GetAtt ReduceValuesStream.StreamArn
-            FilterCriteria:
-              Filters:
-                - Pattern: '{"eventName": ["INSERT"]}'
+  # AvgValuesPopulatorFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: avg-values-populator
+  #     Handler: telran.monitoring.AvgValuesPopulator::handleRequest
+  #     Policies: 
+  #       - Statement:
+  #         - Effect: Allow
+  #           Resource: '*'
+  #           Action:
+  #           - dynamodb:*
+  #     Environment:
+  #       Variables:
+  #         LOGGER_LEVEL: finest
+  #         MONGODB_PASSWORD: Q1w2e3r4$
+  #         DATA_SOURCE_CLASS: telran.monitoring.DataSourceMongo
+  #     Events:
+  #       DynamoDBItemInsert:
+  #         Type: DynamoDB
+  #         Properties:
+  #           StartingPosition: LATEST
+  #           BatchSize: 1
+  #           Stream: !GetAtt ReduceValuesStream.StreamArn
+  #           FilterCriteria:
+  #             Filters:
+  #               - Pattern: '{"eventName": ["INSERT"]}'
 
-  RangeDataProviderFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: range-data-provider
-      Handler: telran.monitoring.RangeDataProvider::handleRequest
-      Environment: 
-        Variables:
-          DB_PASSWORD: Q1w2e3r4$
-          DATA_SOURCE_CLASS: telran.monitoring.DataSourcePostgre
-      Events:
-        RangeDataProvider:
-          Type: Api 
-          Properties:
-            Path: /range/
-            Method: get
+  # RangeDataProviderFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: range-data-provider
+  #     Handler: telran.monitoring.RangeDataProvider::handleRequest
+  #     Environment: 
+  #       Variables:
+  #         DB_PASSWORD: Q1w2e3r4$
+  #         DATA_SOURCE_CLASS: telran.monitoring.DataSourcePostgre
+  #     Events:
+  #       RangeDataProvider:
+  #         Type: Api 
+  #         Properties:
+  #           Path: /range/
+  #           Method: get
 
-  EmailDataProviderFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: email-data-provider
-      Handler: telran.monitoring.EmailDataProvider::handleRequest
-      Environment: 
-        Variables:
-          DB_PASSWORD: Q1w2e3r4$
-          DATA_SOURCE_CLASS: telran.monitoring.DataSourcePostgre
-      Events:
-        RangeDataProvider:
-          Type: Api 
-          Properties:
-            Path: /email/
-            Method: get
+  # EmailDataProviderFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: email-data-provider
+  #     Handler: telran.monitoring.EmailDataProvider::handleRequest
+  #     Environment: 
+  #       Variables:
+  #         DB_PASSWORD: Q1w2e3r4$
+  #         DATA_SOURCE_CLASS: telran.monitoring.DataSourcePostgre
+  #     Events:
+  #       RangeDataProvider:
+  #         Type: Api 
+  #         Properties:
+  #           Path: /email/
+  #           Method: get
 
   PulseValuesStream:
     Type: AWS::DynamoDB::Table
@@ -223,70 +229,90 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_IMAGE  
 
-  ReduceValuesStream:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      KeySchema:
-        - AttributeName: patientId
-          KeyType: HASH
-        - AttributeName: timestamp
-          KeyType: RANGE
-      AttributeDefinitions:
-        - AttributeName: patientId
-          AttributeType: N
-        - AttributeName: timestamp
-          AttributeType: N
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-      StreamSpecification:
-        StreamViewType: NEW_IMAGE  
+  # ReduceValuesStream:
+  #   Type: AWS::DynamoDB::Table
+  #   Properties:
+  #     KeySchema:
+  #       - AttributeName: patientId
+  #         KeyType: HASH
+  #       - AttributeName: timestamp
+  #         KeyType: RANGE
+  #     AttributeDefinitions:
+  #       - AttributeName: patientId
+  #         AttributeType: N
+  #       - AttributeName: timestamp
+  #         AttributeType: N
+  #     ProvisionedThroughput:
+  #       ReadCapacityUnits: 5
+  #       WriteCapacityUnits: 5
+  #     StreamSpecification:
+  #       StreamViewType: NEW_IMAGE  
 
-  AbnormalValuesStream:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      KeySchema:
-        - AttributeName: patientId
-          KeyType: HASH
-        - AttributeName: timestamp
-          KeyType: RANGE
-      AttributeDefinitions:
-        - AttributeName: patientId
-          AttributeType: N
-        - AttributeName: timestamp
-          AttributeType: N
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-      StreamSpecification:
-        StreamViewType: NEW_IMAGE
+  # AbnormalValuesStream:
+  #   Type: AWS::DynamoDB::Table
+  #   Properties:
+  #     KeySchema:
+  #       - AttributeName: patientId
+  #         KeyType: HASH
+  #       - AttributeName: timestamp
+  #         KeyType: RANGE
+  #     AttributeDefinitions:
+  #       - AttributeName: patientId
+  #         AttributeType: N
+  #       - AttributeName: timestamp
+  #         AttributeType: N
+  #     ProvisionedThroughput:
+  #       ReadCapacityUnits: 5
+  #       WriteCapacityUnits: 5
+  #     StreamSpecification:
+  #       StreamViewType: NEW_IMAGE
 
-  NotificationsStream:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      KeySchema:
-        - AttributeName: patientId
-          KeyType: HASH
-        - AttributeName: timestamp
-          KeyType: RANGE
-      AttributeDefinitions:
-        - AttributeName: patientId
-          AttributeType: N
-        - AttributeName: timestamp
-          AttributeType: N
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-      StreamSpecification:
-        StreamViewType: NEW_IMAGE  
+  # NotificationsStream:
+  #   Type: AWS::DynamoDB::Table
+  #   Properties:
+  #     KeySchema:
+  #       - AttributeName: patientId
+  #         KeyType: HASH
+  #       - AttributeName: timestamp
+  #         KeyType: RANGE
+  #     AttributeDefinitions:
+  #       - AttributeName: patientId
+  #         AttributeType: N
+  #       - AttributeName: timestamp
+  #         AttributeType: N
+  #     ProvisionedThroughput:
+  #       ReadCapacityUnits: 5
+  #       WriteCapacityUnits: 5
+  #     StreamSpecification:
+  #       StreamViewType: NEW_IMAGE
 
-Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  RangeDataProviderApi:
-    Description: "API Gateway endpoint URL for Prod stage for Range Data Provider Function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/range/"
-  EmailDataProviderApi:
-    Description: "API Gateway endpoint URL for Prod stage for Range Data Provider Function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/"
+  JumpS3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Sub jump-s3-bucket-${AWS::AccountId}-${AWS::Region}
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      Tags:
+        - Key: Name
+          Value: JumpS3Bucket
+
+# Outputs:
+#   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+#   # Find out more about other implicit resources you can reference within SAM
+#   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+#   RangeDataProviderApi:
+#     Description: "API Gateway endpoint URL for Prod stage for Range Data Provider Function"
+#     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/range/"
+#   EmailDataProviderApi:
+#     Description: "API Gateway endpoint URL for Prod stage for Range Data Provider Function"
+#     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/"

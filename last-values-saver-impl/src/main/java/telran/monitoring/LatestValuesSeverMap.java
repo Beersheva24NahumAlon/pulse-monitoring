@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import telran.monitoring.api.LatestValueSaver;
 import telran.monitoring.api.SensorData;
+import telran.monitoring.logging.Logger;
 
-public class LatestValuesSeverMap implements LatestValueSaver {
+public class LatestValuesSeverMap extends AbstractLatestSaverLogger {
+    public LatestValuesSeverMap(Logger logger) {
+        super(logger);
+    }
+
     HashMap<Long, List<SensorData>> map = new HashMap<>();
 
     @Override

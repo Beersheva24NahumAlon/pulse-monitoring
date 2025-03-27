@@ -5,20 +5,20 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>telran.monitoring</groupId>
-    <artifactId>pulse-monitoring-api</artifactId>
+    <artifactId>sender-mails</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-    </properties>
+    <parent>
+        <groupId>telran.monitoring</groupId>
+        <artifactId>pulse-monitoring-parent</artifactId>
+        <version>0.0.1</version>
+    </parent>
 
     <dependencies>
         <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20240303</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ses</artifactId>
         </dependency>
     </dependencies>
- 
+
 </project>

@@ -6,7 +6,7 @@ public interface Configuration {
     int MAX_PULSE_VALUE = 240;
     int TIMEOUT_RESPONSE = 2000;
     int TIMEOUT_SEND = 500;
-    String DEFAULT_HOST = "localhost";
+    String DEFAULT_HOST = "44.201.128.59";
     int DEFAULT_PORT = 5000;
     int DEFAULT_N_PATIENTS = 3;
     int DEFAULT_N_PACKETS = 100;

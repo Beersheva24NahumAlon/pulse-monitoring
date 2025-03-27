@@ -22,7 +22,7 @@ public class JumpRecognizer {
   private static final String DEFAULT_MESSAGE_BOX = "jump_pulse_values";
 
   Logger logger = new LoggerStandard("jump-pulse-recognizer");
-  LatestValueSaver lastValues = new LatestValuesSeverMap();
+  LatestValueSaver lastValues = new LatestValueSaverS3(logger);
   Map<String, String> env = System.getenv();
   float factor = getFactor();
 
